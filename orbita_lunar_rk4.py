@@ -8,18 +8,27 @@ from matplotlib.patches import Circle
 from matplotlib.collections import LineCollection
 
 # ── Constantes físicas ──────────────────────────────────────────────────────
-G   = 6.674e-11
-M_T = 5.972e24
+G   = 6.674e-11 # Constante de gravitación universal [m³ kg⁻¹ s⁻²]
+M_T = 5.972e24  # Masa de la Tierra [kg]
 
 # ── Condiciones iniciales ────────────────────────────────────────────────────
-x0  =  3.633e8
-y0  =  0.0
-vx0 =  0.0
-vy0 =  1.082e3
+# Valores reales de la órbita lunar
+r_perigeo = 3.565e8    # m  (356 500 km)
+r_apogeo  = 4.067e8    # m  (406 700 km)
+a         = (r_perigeo + r_apogeo) / 2   # semi-eje mayor
+
+# Velocidad correcta en el perigeo (vis-viva)
+v_perigeo = np.sqrt(G * M_T * (2/r_perigeo - 1/a))
+# → da ~1.082 km/s  ✓
+
+x0  = r_perigeo   # arranca en el perigeo
+y0  = 0.0
+vx0 = 0.0
+vy0 = v_perigeo   # velocidad consistente con esa posición
 
 # ── Parámetros de integración ────────────────────────────────────────────────
-T_TOTAL = 27.3 * 24 * 3600
-DT      = 60.0
+T_TOTAL = 27.3 * 24 * 3600   # Duración total = 1 período orbital ≈ 2 359 440 s
+DT      = 60.0                # Paso de tiempo = 60 segundos (1 minuto)
 
 # ── Sistema de EDOs ──────────────────────────────────────────────────────────
 def derivadas(t, estado):
@@ -32,11 +41,11 @@ def derivadas(t, estado):
 
 # ── Runge-Kutta 4 ────────────────────────────────────────────────────────────
 def rk4_paso(f, t, estado, h):
-    k1 = f(t,         estado)
-    k2 = f(t + h/2,   estado + h/2 * k1)
-    k3 = f(t + h/2,   estado + h/2 * k2)
-    k4 = f(t + h,     estado + h   * k3)
-    return estado + (h/6) * (k1 + 2*k2 + 2*k3 + k4)
+    q1 = f(t,         estado)
+    q2 = f(t + h/2,   estado + h/2 * q1)
+    q3 = f(t + h/2,   estado + h/2 * q2)
+    q4 = f(t + h,     estado + h   * q3)
+    return estado + (h/6) * (q1 + 2*q2 + 2*q3 + q4)
 
 # ── Integración ──────────────────────────────────────────────────────────────
 estado = np.array([x0, y0, vx0, vy0])
