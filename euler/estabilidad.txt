@@ -1,3 +1,0 @@
-T_TOTAL = 27.3 * 24 * 10000000
-DT      = 263477.0
-minimo dt, si se incrementa => inestable (se va)
