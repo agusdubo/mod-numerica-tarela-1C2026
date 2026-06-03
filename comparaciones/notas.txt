@@ -1,0 +1,4 @@
+rk2 y rk4, a menos que se suba bastante el dt y la duracion, aprox dt 10.000 y duracion 250, ni se nota la diferencia. 
+Con euler se nota al toque. 
+Se pueden comparar todos los algoritmos contra todos, simplemente poner flag --metodos y poner los metodos separados por espacios
+Métodos disponibles: rk2 | rk4 | euler | csv:lunar_orbit.csv
