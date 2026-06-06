@@ -147,7 +147,7 @@ def cargar_csv(ruta: str) -> pd.DataFrame:
 # RESOLUCIÓN DE FUENTES
 # ────────────────────────────────────────────────────────────────────────────
 
-def resolver_fuentes(metodos, dt, duracion):
+def resolver_fuentes(metodos, dt, duracion, exportar_csv=True):
     resultados = []
     for m in metodos:
         if m.startswith('csv:'):
@@ -157,9 +157,14 @@ def resolver_fuentes(metodos, dt, duracion):
                 sys.exit(1)
             df  = cargar_csv(ruta)
             etq = os.path.splitext(os.path.basename(ruta))[0]
+            # Los CSV de entrada no se re-exportan (ya son archivos externos)
         elif m in INTEGRADORES:
             df  = simular(m, dt, duracion)
             etq = m.upper()
+            if exportar_csv:
+                nombre_csv = f"resultado_{etq.lower()}.csv"
+                df.to_csv(nombre_csv, index=False)
+                print(f"  [{etq}] Resultados guardados en: {nombre_csv}")
         else:
             print(f"Error: método desconocido '{m}'. Opciones: rk4, euler, csv:<ruta>",
                   file=sys.stderr)
@@ -229,13 +234,16 @@ def parse_args():
                    help='Ruta de la imagen de salida (default: comparacion_orbital.png)')
     p.add_argument('--dpi',      type=int,   default=150,
                    help='Resolución de la imagen (default: 150)')
+    p.add_argument('--no-exportar-csv', dest='exportar_csv', action='store_false',
+                   help='Desactiva la exportación de CSV por método (activada por defecto)')
     return p.parse_args()
 
 
 def main():
     args = parse_args()
     print(f"[comparar_orbitas] Fuentes: {args.metodos}")
-    fuentes = resolver_fuentes(args.metodos, args.dt, args.duracion)
+    fuentes = resolver_fuentes(args.metodos, args.dt, args.duracion,
+                               exportar_csv=args.exportar_csv)
     graficar(fuentes, salida=args.salida, dpi=args.dpi)
 
 
