@@ -176,12 +176,12 @@ class VentanaOrbital(QMainWindow):
         # --- Panel Superior de Controles ---
         layout_controles = QHBoxLayout()
         layout_controles.addWidget(QLabel("extra_v[0] (vx, m/s):"))
-        self.input_v0 = QLineEdit("-460")
+        self.input_v0 = QLineEdit("-633")
         self.input_v0.setFixedWidth(80)
         layout_controles.addWidget(self.input_v0)
 
         layout_controles.addWidget(QLabel("extra_v[1] (vy, m/s):"))
-        self.input_v1 = QLineEdit("-150")
+        self.input_v1 = QLineEdit("-36")
         self.input_v1.setFixedWidth(80)
         layout_controles.addWidget(self.input_v1)
 

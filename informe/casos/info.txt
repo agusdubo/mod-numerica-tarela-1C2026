@@ -1,0 +1,5 @@
+para todos los casos usamos como valores iniciales de la luna, los correspondientes a los datos reales del 1 de abril a las 00:00:
+x   = -3.894680455007774E+08 m
+y   =  1.289648175008370E+07 m
+vx  = -7.035045575758354E-05 m/s
+vy  = -1.006992176217861E+03 m/s

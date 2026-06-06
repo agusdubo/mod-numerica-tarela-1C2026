@@ -1,0 +1,7 @@
+para todos los casos usamos la luna calculada con
+dt = 60
+1 vuelta
+y la orion con:
+dt = 60 (para que tenga sentido con los datos de la luna)
+10 días
+vel_extra = (-633, -36) => magnitud vector velocidad = 3022,74 m/s, ángulo = -127,98°
