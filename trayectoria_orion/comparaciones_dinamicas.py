@@ -297,20 +297,64 @@ class VentanaOrbital(QMainWindow):
         self.ax.legend(fontsize=8, loc='upper right')
         
         # NUEVO: Le dice a la barra de navegación que registre estos límites como la posición de inicio "Home"
-        self.toolbar.update() 
+        self.toolbar.update()
+
+        self.texto_info = self.ax.text(0.02, 0.95, "", transform=self.ax.transAxes, 
+                                       fontsize=9, verticalalignment='top',
+                                       bbox=dict(boxstyle='round', facecolor='white', alpha=0.85))
         
         self.actualizar_marcador_tiempo(0)
 
     def actualizar_marcador_tiempo(self, paso):
+        import datetime  # Importación local para el manejo del tiempo
+        
         self.label_tiempo.setText(f"Paso: {paso} / {self.slider_tiempo.maximum()}")
+
+        # Definimos una fecha base simulada para el inicio (puedes cambiarla por la real de la misión)
+        fecha_inicio = datetime.datetime(2026, 1, 1, 0, 0, 0) 
+
+        texto_lineas = []
 
         for df_orion, df_luna, marcador_p, marcador_l in self.marcadores_moviles:
             idx_p = min(paso, len(df_orion) - 1)
-            marcador_p.set_data([df_orion['x'].iloc[idx_p]], [df_orion['y'].iloc[idx_p]])
+            
+            # Extraer posición actual
+            x_act = df_orion['x'].iloc[idx_p]
+            y_act = df_orion['y'].iloc[idx_p]
+            marcador_p.set_data([x_act], [y_act])
 
             if df_luna is not None and marcador_l is not None:
                 idx_l = min(paso, len(df_luna) - 1)
                 marcador_l.set_data([df_luna['x'].iloc[idx_l]], [df_luna['y'].iloc[idx_l]])
+
+            # === NUEVO: Cálculos del Vector Velocidad y Tiempo ===
+            vx = df_orion['vx'].iloc[idx_p]
+            vy = df_orion['vy'].iloc[idx_p]
+            t_segundos = df_orion['time_s'].iloc[idx_p]
+
+            # 1. Magnitud de la velocidad: sqrt(vx^2 + vy^2)
+            magnitud_v = np.hypot(vx, vy) # Equivale a np.sqrt(vx**2 + vy**2)
+
+            # 2. Ángulo en grados respecto al eje X positivo (-180° a 180°)
+            angulo_rad = np.arctan2(vy, vx)
+            angulo_deg = np.degrees(angulo_rad)
+
+            # 3. Calcular Fecha y Hora sumando los segundos transcurridos
+            fecha_actual = fecha_inicio + datetime.timedelta(seconds=float(t_segundos))
+            fecha_str = fecha_actual.strftime("%Y-%m-%d %H:%M:%S")
+
+            # Formatear los datos para esta trayectoria
+            # Nota: Si tienes múltiples integradores corriendo a la vez, esto listará los datos de cada uno
+            texto_lineas.append(
+                f"--- Orión ---\n"
+                f"Fecha/Hora: {fecha_str}\n"
+                f"Mag. Vel: {magnitud_v:.2f} m/s\n"
+                f"Ángulo Vel: {angulo_deg:.2f}°"
+            )
+
+        # Actualizar el cuadro de texto en la esquina superior izquierda de la gráfica
+        if self.texto_info:
+            self.texto_info.set_text("\n".join(texto_lineas))
 
         # Usamos draw_idle() para que respete el zoom actual de la pantalla mientras mueves el slider
         self.canvas.draw_idle()
