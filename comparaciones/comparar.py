@@ -71,7 +71,7 @@ def simular(metodo: str, dt: float, duracion_dias: float) -> pd.DataFrame:
     t_total = duracion_dias * 86400.0
     pasos   = int(t_total / dt)
 
-    estado = np.array([R_PERIGEO, 0.0, 0.0, V_PERIGEO])
+    estado = np.array([-3.894680455007774E+08, 1.289648175008370E+07, -7.035045575758354E-05,-1.006992176217861E+03])
     t      = 0.0
 
     registros = np.empty((pasos + 1, 5))

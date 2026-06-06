@@ -403,10 +403,11 @@ def main():
     R_PERIGEO = 3.565e8
     V_PERIGEO = np.sqrt(CONST_G * M_T * (2 / R_PERIGEO - 1 / ((R_PERIGEO + 4.067e8) / 2)))
 
-    x0  = -52409.924647197156 * 1609.34   # km → m
-    y0  = -48671.635720228245 * 1609.34
-    vx0 = -1.22735334971968  * 1609.34   # km/s → m/s
-    vy0 = -2.34643943970753  * 1609.34
+    # que unidad???
+    x0  = -52409.924647197156 * 1100
+    y0  = -48671.635720228245 * 1100
+    vx0 = -1.22735334971968  * 500
+    vy0 = -2.34643943970753  * 1210
 
     estado_inicial = np.array([x0, y0, vx0, vy0])
     print(f"[comparar_artemis] Estado inicial: x={x0:.3e} y={y0:.3e} vx={vx0:.3e} vy={vy0:.3e}")
