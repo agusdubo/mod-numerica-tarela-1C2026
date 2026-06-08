@@ -1,0 +1,38 @@
+2D
+
+tierra fija
+
+cualquier cosa extra suma puntos: plantear metodo implícito, usar método conservativo para mejorar la solución, etc.
+
+cuidado con las unidades -> definirlas
+
+verificar colisiones (radio del cuerpo): modelar la masa de un cuerpo en un punto hace que, a medida que me acerco al centro, la gravedad tienda a infinito -> posibles errores
+
+hallar x e y (de las primeras 2 ec.) en todo el tiempo, modelando la órbita
+
+en las ecuaciones va a haber que agregar un signo menos (-) para que en cada cuadrante correspondan los signos de velocidad
+
+con euler y runge-kutta 2 (explícitos)
+nuestra solución se va a desviar (se va a ir agrandando o achicando (órbita como espiral)) porque:
+	- no son métodos conservativos (no se conserva energía cinética y potencial)
+	- errores de truncamiento
+ir cambiando el paso de cálculo:
+	- en algún paso va a ser inestable -> chequear modelando, por ejemplo, 200 vueltas, 1 mes, etc...
+	- encontrar paso límite en el que cambia entre estable/inestable
+
+parte luna:
+buscar datos oficiales de la luna: velocidad máxima, velocidad mínima, órbita, gravedad, masa, apoápside y periápside
+tratar de acercar nuestra aproximación a los datos reales
+nuestros valores iniciales son x, y, vx, vy
+podemos tomar los valores iniciales en cualquier punto de la órbita, pero es mas simple iniciar con distancia luna-tierra solo en x y velocidad de la luna solo en y
+
+parte capsula:
+para este punto, los datos de trayectoria de la luna los tomamos de lo que calculamos antes -> los tomamos como datos conocidos para este punto
+hacemos lo mismo que hicimos con la luna, pero con la cápsula (teniendo en cuenta que ahora se le aplican 2 gravedades distintas a la vez)
+del archivo CSV de telemetría de la cápsula, no tomamos el valor z
+podemos modificar los datos iniciales del CSV de la cápsula un poco para apuntarle
+ir modificando la posicion y velocidad para hacer la órbita -> choca, falla, órbitas de distintos tamaños
+comparar la órbita calculada de la cápsula con el archivo CSV
+las partes de la orbita mas cercanas a la luna deberían quedar lo mas parecido posible a la telemetría
+buscar que la órbita forme un "8" simétrico (probablemente no cierre exacto)
+modelar varias vueltas de la cápsula para ver la estabilidad
