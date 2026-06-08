@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 """
-Comparador de trayectorias orbitales en PyQt5 con Slider y Barra de Zoom Interactiva.
+Con este script se puede elegir un método con su paso y con su duración, para graficar la trayectoria de orión utilizando ese método.
+Se grafica a partir de los resultados obtenidos con la simulación de la órbita lunar, es decir, si ejecuto este script con rk2, va a utilizar los resultados de la órbita lunar obtnidos con rk2.
+Si no hay un csv en la carpeta resultados con el nombre del método, hay que correr primero el script para calcular la órbita lunar con el método para que se genere y ahí correr este.  
+
+Uso:
+    python trayectoria_orion.py --metodo rk4 
+    python trayectoria_orion.py --metodo euler --dt 60 --duracion 27.3
+
 """
 
 import argparse
@@ -10,20 +17,19 @@ import sys
 import numpy as np
 import pandas as pd
 
-# Configurar backend de Matplotlib para PyQt5
 import matplotlib
 matplotlib.use('Qt5Agg') 
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-# CAMBIO CLÍTICO: Importar la barra de herramientas de navegación para Qt5
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 
-# Importar componentes de PyQt5
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QLabel, QLineEdit, QPushButton, 
                              QSlider, QMessageBox)
 from PyQt5.QtCore import Qt
+
+from discretizaciones import INTEGRADORES
 
 # ── Constantes físicas ───────────────────────────────────────────────────────
 CONST_G = 6.674e-11
@@ -34,9 +40,7 @@ MOON_RADIUS_KM = 1737
 
 PALETA = ['#1f77b4', '#d62728', '#2ca02c', '#9467bd', '#8c564b', '#e377c2']
 
-# ────────────────────────────────────────────────────────────────────────────
-# FÍSICA E INTEGRADORES (Igual al original)
-# ────────────────────────────────────────────────────────────────────────────
+
 def gravitational_acceleration(x, y, pos_luna):
     r2_t = x**2 + y**2
     r_t  = r2_t**0.5
@@ -62,23 +66,6 @@ def derivadas(estado, pos_luna):
     ax, ay = gravitational_acceleration(x, y, pos_luna)
     return np.array([vx, vy, ax, ay])
 
-def euler_step(estado, dt, pos_luna): return estado + dt * derivadas(estado, pos_luna)
-def rk2_step(estado, dt, pos_luna):
-    k1 = derivadas(estado, pos_luna)
-    k2 = derivadas(estado + dt * k1, pos_luna)
-    return estado + dt * 0.5 * (k1 + k2)
-def rk4_step(estado, dt, pos_luna):
-    k1 = derivadas(estado,              pos_luna)
-    k2 = derivadas(estado + dt/2 * k1, pos_luna)
-    k3 = derivadas(estado + dt/2 * k2, pos_luna)
-    k4 = derivadas(estado + dt   * k3, pos_luna)
-    return estado + dt / 6 * (k1 + 2*k2 + 2*k3 + k4)
-
-INTEGRADORES = {'euler': euler_step, 'rk2': rk2_step, 'rk4': rk4_step}
-
-# ────────────────────────────────────────────────────────────────────────────
-# CARGA DE DATOS Y SIMULACIÓN
-# ────────────────────────────────────────────────────────────────────────────
 def cargar_datos_luna(ruta: str) -> np.ndarray:
     df = pd.read_csv(ruta, low_memory=False)
     col_map = {}
@@ -106,7 +93,8 @@ def simular(nombre: str, dt: float, duracion_dias: float,
 
     for i in range(pasos):
         pos_luna = datos_luna[-1] if i >= n_luna else datos_luna[i]
-        estado = integrador(estado, dt, pos_luna)
+        f = lambda t, s: derivadas(s, pos_luna)
+        estado = integrador(f, t, estado, dt)
         t     += dt
         registros[i + 1] = [t, *estado]
     return pd.DataFrame(registros, columns=['time_s', 'x', 'y', 'vx', 'vy'])
@@ -139,26 +127,20 @@ def cargar_csv_trayectoria(ruta: str) -> pd.DataFrame:
         df['y'] *= 1e3
     return df
 
-def resolver_fuentes(metodos, dt, duracion, estado_inicial, exportar_csv=False):
+def resolver_fuentes(metodo, dt, duracion, estado_inicial):
     resultados = []
-    for m in metodos:
-        if m.startswith('csv:'):
-            ruta = m[4:]
-            if os.path.exists(ruta):
-                df = cargar_csv_trayectoria(ruta)
-                resultados.append((os.path.splitext(os.path.basename(ruta))[0], df, None))
-        elif m in INTEGRADORES:
-            ruta_luna = f"../comparaciones/resultado_{m.lower()}.csv"
-            if not os.path.exists(ruta_luna): continue
+    if metodo.startswith('csv:'):
+        ruta = metodo[4:]
+        if os.path.exists(ruta):
+            df = cargar_csv_trayectoria(ruta)
+            resultados.append((os.path.splitext(os.path.basename(ruta))[0], df, None))
+    elif metodo in INTEGRADORES:
+        ruta_luna = f"resultados/resultado_{metodo.lower()}.csv"
+        if os.path.exists(ruta_luna):
             datos_luna_arr, df_luna = cargar_datos_luna(ruta_luna)
-            df = simular(m, dt, duracion, estado_inicial, datos_luna_arr)
-            resultados.append((m.upper(), df, df_luna))
+            df = simular(metodo, dt, duracion, estado_inicial, datos_luna_arr)
+            resultados.append((metodo.upper(), df, df_luna))
     return resultados
-
-
-# ────────────────────────────────────────────────────────────────────────────
-# INTERFAZ GRÁFICA EN PYQT5 CON ZOOM
-# ────────────────────────────────────────────────────────────────────────────
 
 class VentanaOrbital(QMainWindow):
     def __init__(self, args):
@@ -173,7 +155,6 @@ class VentanaOrbital(QMainWindow):
         self.setCentralWidget(widget_central)
         layout_principal = QVBoxLayout(widget_central)
 
-        # --- Panel Superior de Controles ---
         layout_controles = QHBoxLayout()
         layout_controles.addWidget(QLabel("extra_v[0] (vx, m/s):"))
         self.input_v0 = QLineEdit("-633")
@@ -192,17 +173,14 @@ class VentanaOrbital(QMainWindow):
         layout_controles.addStretch()
         layout_principal.addLayout(layout_controles)
 
-        # --- Lienzo del Gráfico ---
         self.fig, self.ax = plt.subplots(figsize=(7, 7))
         self.canvas = FigureCanvas(self.fig)
-        
-        # NUEVO: Añadir la barra de herramientas de zoom nativa en el layout
-        # Recibe el canvas actual y la ventana contenedora (self)
+
         self.toolbar = NavigationToolbar(self.canvas, self)
         layout_principal.addWidget(self.toolbar)
         layout_principal.addWidget(self.canvas)
 
-        # --- Panel Inferior del Slider ---
+        
         layout_slider = QHBoxLayout()
         self.label_tiempo = QLabel("Paso: 0 / 0")
         self.label_tiempo.setFixedWidth(150)
@@ -218,7 +196,6 @@ class VentanaOrbital(QMainWindow):
 
         self.marcadores_moviles = []
 
-        # Primera simulación automática
         self.ejecutar_recalculo()
 
     def ejecutar_recalculo(self):
@@ -229,6 +206,7 @@ class VentanaOrbital(QMainWindow):
             QMessageBox.critical(self, "Error de formato", "Introduce números decimales válidos.")
             return
 
+        # Condiciones iniciales
         x0  = -52409.924647197156 * 1000
         y0  = -48671.635720228245 * 1000
         vx0 = -1.22735334971968  * 1000 + ev0
@@ -236,8 +214,7 @@ class VentanaOrbital(QMainWindow):
         estado_inicial = np.array([x0, y0, vx0, vy0])
 
         self.fuentes = resolver_fuentes(
-            self.args.metodos, self.args.dt, self.args.duracion,
-            estado_inicial, exportar_csv=self.args.exportar_csv
+        self.args.metodo, self.args.dt, self.args.duracion, estado_inicial
         )
 
         if not self.fuentes:
@@ -258,18 +235,15 @@ class VentanaOrbital(QMainWindow):
         self.ax.clear()
         self.marcadores_moviles.clear()
 
-        # Dibujar la Tierra
         self.ax.add_patch(Circle((0, 0), EARTH_RADIUS_KM * 1e3, color='steelblue', zorder=5))
         self.ax.plot([], [], 's', color='steelblue', label='Tierra')
 
-        # Dibujar las líneas completas de las órbitas
         for (etq, df_orion, df_luna), color in zip(self.fuentes, PALETA):
             self.ax.plot(df_orion['x'].values, df_orion['y'].values, lw=1.2, color=color, label=f'Orión ({etq})', zorder=4)
 
             if df_luna is not None:
                 self.ax.plot(df_luna['x'].values, df_luna['y'].values, lw=1.0, color=color, ls='--', alpha=0.4, label=f'Luna ({etq})', zorder=3)
 
-            # Inicializar los marcadores dinámicos que se moverán con el Slider
             marcador_p, = self.ax.plot([], [], 'o', color=color, ms=9, zorder=8)
             marcador_l = None
             if df_luna is not None:
@@ -277,7 +251,6 @@ class VentanaOrbital(QMainWindow):
             
             self.marcadores_moviles.append((df_orion, df_luna, marcador_p, marcador_l))
 
-        # Ajuste de límites por defecto de la ventana
         all_x = np.concatenate([df['x'].values for _, df, _ in self.fuentes])
         all_y = np.concatenate([df['y'].values for _, df, _ in self.fuentes])
         for _, _, df_luna in self.fuentes:
@@ -296,7 +269,6 @@ class VentanaOrbital(QMainWindow):
         self.ax.set_ylabel('y (m)')
         self.ax.legend(fontsize=8, loc='upper right')
         
-        # NUEVO: Le dice a la barra de navegación que registre estos límites como la posición de inicio "Home"
         self.toolbar.update()
 
         self.texto_info = self.ax.text(0.02, 0.95, "", transform=self.ax.transAxes, 
@@ -306,11 +278,10 @@ class VentanaOrbital(QMainWindow):
         self.actualizar_marcador_tiempo(0)
 
     def actualizar_marcador_tiempo(self, paso):
-        import datetime  # Importación local para el manejo del tiempo
+        import datetime
         
         self.label_tiempo.setText(f"Paso: {paso} / {self.slider_tiempo.maximum()}")
 
-        # Definimos una fecha base simulada para el inicio (puedes cambiarla por la real de la misión)
         fecha_inicio = datetime.datetime(2026, 1, 1, 0, 0, 0) 
 
         texto_lineas = []
@@ -318,7 +289,6 @@ class VentanaOrbital(QMainWindow):
         for df_orion, df_luna, marcador_p, marcador_l in self.marcadores_moviles:
             idx_p = min(paso, len(df_orion) - 1)
             
-            # Extraer posición actual
             x_act = df_orion['x'].iloc[idx_p]
             y_act = df_orion['y'].iloc[idx_p]
             marcador_p.set_data([x_act], [y_act])
@@ -327,24 +297,21 @@ class VentanaOrbital(QMainWindow):
                 idx_l = min(paso, len(df_luna) - 1)
                 marcador_l.set_data([df_luna['x'].iloc[idx_l]], [df_luna['y'].iloc[idx_l]])
 
-            # === NUEVO: Cálculos del Vector Velocidad y Tiempo ===
             vx = df_orion['vx'].iloc[idx_p]
             vy = df_orion['vy'].iloc[idx_p]
             t_segundos = df_orion['time_s'].iloc[idx_p]
 
-            # 1. Magnitud de la velocidad: sqrt(vx^2 + vy^2)
-            magnitud_v = np.hypot(vx, vy) # Equivale a np.sqrt(vx**2 + vy**2)
+            # Magnitud de la velocidad
+            magnitud_v = np.hypot(vx, vy)
 
-            # 2. Ángulo en grados respecto al eje X positivo (-180° a 180°)
+            # Ángulo en grados
             angulo_rad = np.arctan2(vy, vx)
             angulo_deg = np.degrees(angulo_rad)
 
-            # 3. Calcular Fecha y Hora sumando los segundos transcurridos
+            # Fecha y Hora
             fecha_actual = fecha_inicio + datetime.timedelta(seconds=float(t_segundos))
             fecha_str = fecha_actual.strftime("%Y-%m-%d %H:%M:%S")
 
-            # Formatear los datos para esta trayectoria
-            # Nota: Si tienes múltiples integradores corriendo a la vez, esto listará los datos de cada uno
             texto_lineas.append(
                 f"--- Orión ---\n"
                 f"Fecha/Hora: {fecha_str}\n"
@@ -352,23 +319,17 @@ class VentanaOrbital(QMainWindow):
                 f"Ángulo Vel: {angulo_deg:.2f}°"
             )
 
-        # Actualizar el cuadro de texto en la esquina superior izquierda de la gráfica
         if self.texto_info:
             self.texto_info.set_text("\n".join(texto_lineas))
 
-        # Usamos draw_idle() para que respete el zoom actual de la pantalla mientras mueves el slider
         self.canvas.draw_idle()
 
 
-# ────────────────────────────────────────────────────────────────────────────
-# MAIN
-# ────────────────────────────────────────────────────────────────────────────
 def parse_args():
     p = argparse.ArgumentParser(description='Simulador interactivo con Zoom')
-    p.add_argument('--metodos', nargs='+', required=True, help='Ej: rk4 euler')
+    p.add_argument('--metodo', required=True, help='Ej: rk4')
     p.add_argument('--dt',       type=float, default=60.0)
-    p.add_argument('--duracion', type=float, default=27.3)
-    p.add_argument('--no-exportar-csv', dest='exportar_csv', action='store_false')
+    p.add_argument('--duracion', type=float, default=10)
     return p.parse_args()
 
 def main():

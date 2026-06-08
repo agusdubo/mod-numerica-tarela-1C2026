@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
 """
-Comparador de trayectorias orbitales lunares
-Métodos disponibles: rk2 | rk4 | euler | csv:lunar_orbit.csv
+En este script se calcula la órbita lunar, donde se puede seleccionar los métodos, el paso y cuanto tiempo en días se simula.
+Se puede elegir uno o más métodos, que luego en la imagen resultado, se grafica cada recorrido con cada método.
+Cuando se utiliza el script con un método, de salida se crea un .csv en la carpeta resultados que contiene todos los puntos de la solución obtenidos, que luego pueden ser utilizados para calcular la trayectoria de orion
+Si no existe la carpeta resultados, después de correr este script se crea automáticamente. 
+Métodos disponibles: rk2 | rk4 | euler
 
 Uso:
-    python comparar.py --metodos rk4 
-    python comparar.py --metodos rk4 euler
-    python comparar.py --metodos rk4 euler rk2
-    python comparar.py --metodos rk4 euler rk2 csv:lunar_orbit.csv
-    python comparar.py --metodos rk4 euler --dt 60 --duracion 27.3
-    python comparar.py --metodos rk4 euler --salida comparacion.png
+    python trayectoria_luna.py --metodos rk4 
+    python trayectoria_luna.py --metodos rk4 euler
+    python trayectoria_luna.py --metodos rk4 euler rk2
+    python trayectoria_luna.py --metodos rk4 euler rk2
+    python trayectoria_luna.py --metodos rk4 euler --dt 60 --duracion 27.3
+    python trayectoria_luna.py --metodos rk4 euler --salida comparacion.png
 
-    SIENDO dt paso del tiempo y duracion los dias
+    SIENDO dt paso del tiempo en segundos y duracion en dias
 """
 
 import argparse
@@ -25,10 +28,8 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
 
-from integradores import INTEGRADORES
+from discretizaciones import INTEGRADORES
 
-
-# ── Constantes físicas ───────────────────────────────────────────────────────
 G   = 6.674e-11
 M_T = 5.972e24
 
@@ -48,11 +49,6 @@ PALETA = [
     '#e377c2',
 ]
 
-
-# ────────────────────────────────────────────────────────────────────────────
-# FÍSICA
-# ────────────────────────────────────────────────────────────────────────────
-
 def derivadas(t, estado):
     x, y, vx, vy = estado
     d2 = x**2 + y**2
@@ -60,11 +56,6 @@ def derivadas(t, estado):
     ax = -G * M_T / d2 * (x / d)
     ay = -G * M_T / d2 * (y / d)
     return np.array([vx, vy, ax, ay])
-
-
-# ────────────────────────────────────────────────────────────────────────────
-# SIMULACIÓN
-# ────────────────────────────────────────────────────────────────────────────
 
 def simular(metodo: str, dt: float, duracion_dias: float) -> pd.DataFrame:
     integrador = INTEGRADORES[metodo]
@@ -88,11 +79,6 @@ def simular(metodo: str, dt: float, duracion_dias: float) -> pd.DataFrame:
     print(f"listo ({len(df):,} filas)")
     return df
 
-
-# ────────────────────────────────────────────────────────────────────────────
-# CARGA DE CSV
-# ────────────────────────────────────────────────────────────────────────────
-
 def cargar_csv(ruta: str) -> pd.DataFrame:
     with open(ruta, 'r') as f:
         lineas = f.readlines()
@@ -103,7 +89,6 @@ def cargar_csv(ruta: str) -> pd.DataFrame:
         df = pd.read_csv(ruta, sep=';', decimal=',', header=None,
                          names=['time_s', 'x', 'y', 'z', 'vx', 'vy', 'vz'])
     else:
-        # Buscar la fila del encabezado: la primera que contenga 'X' e 'Y'
         header_idx = None
         for i, linea in enumerate(lineas):
             partes = [p.strip().upper() for p in linea.split(',')]
@@ -118,7 +103,6 @@ def cargar_csv(ruta: str) -> pd.DataFrame:
 
         df = pd.read_csv(ruta, sep=',', header=header_idx, low_memory=False)
 
-        # Descartar filas que no sean datos numéricos (pie de página de Horizons, etc.)
         col_map = {}
         for col in df.columns:
             cu = col.strip().upper()
@@ -134,18 +118,12 @@ def cargar_csv(ruta: str) -> pd.DataFrame:
 
     df = df.dropna(subset=['x', 'y'])
 
-    # Las coordenadas de Horizons vienen en km → convertir a metros
     if df['x'].abs().max() < 1e7:
         df['x'] *= 1e3
         df['y'] *= 1e3
 
     print(f"  [CSV] {os.path.basename(ruta)} cargado ({len(df):,} filas)")
     return df
-
-
-# ────────────────────────────────────────────────────────────────────────────
-# RESOLUCIÓN DE FUENTES
-# ────────────────────────────────────────────────────────────────────────────
 
 def resolver_fuentes(metodos, dt, duracion, exportar_csv=True):
     resultados = []
@@ -157,11 +135,11 @@ def resolver_fuentes(metodos, dt, duracion, exportar_csv=True):
                 sys.exit(1)
             df  = cargar_csv(ruta)
             etq = os.path.splitext(os.path.basename(ruta))[0]
-            # Los CSV de entrada no se re-exportan (ya son archivos externos)
         elif m in INTEGRADORES:
             df  = simular(m, dt, duracion)
             etq = m.upper()
             if exportar_csv:
+                os.makedirs("resultados", exist_ok=True)
                 nombre_csv = f"resultados/resultado_{etq.lower()}.csv"
                 df.to_csv(nombre_csv, index=False)
                 print(f"  [{etq}] Resultados guardados en: {nombre_csv}")
@@ -171,11 +149,6 @@ def resolver_fuentes(metodos, dt, duracion, exportar_csv=True):
             sys.exit(1)
         resultados.append((etq, df))
     return resultados
-
-
-# ────────────────────────────────────────────────────────────────────────────
-# GRAFICACIÓN
-# ────────────────────────────────────────────────────────────────────────────
 
 def graficar(fuentes, salida, dpi):
     fig, ax = plt.subplots(figsize=(8, 8))
@@ -209,11 +182,6 @@ def graficar(fuentes, salida, dpi):
     fig.savefig(salida, dpi=dpi, bbox_inches='tight')
     print(f"\n[comparar_orbitas] Imagen guardada: {salida}")
     plt.close(fig)
-
-
-# ────────────────────────────────────────────────────────────────────────────
-# MAIN
-# ────────────────────────────────────────────────────────────────────────────
 
 def parse_args():
     p = argparse.ArgumentParser(

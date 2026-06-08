@@ -1,6 +1,5 @@
 # Visualizador de telemetría (Artemis II)
-
-Unidad: milla
+Esta carpeta contiene un script con el cuál se puede visualizar la trayectoria de orión con los datos reales de las telemetrías y de la órbita lunar real, obtenidos de la página Horizons System, de NASA.
 
 Setup y uso rápido:
 
@@ -18,7 +17,7 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-3) Ejecutar (interactivo con slider)
+3) Ejecutar
 
 ```bash
 python visualize_telemetry.py "Artemis II Data.csv"
