@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 """
-trayectoria_luna.py
-
 Uso:
     python trayectoria_luna.py --metodos rk4
     python trayectoria_luna.py --metodos rk4 euler rk2
@@ -16,7 +14,7 @@ import argparse
 import os
 import sys
 
-from utils.discretizaciones import INTEGRADORES
+from src.utils.pasos import INTEGRADORES
 from utils.fisica import simular_luna
 from graficos.io_datos  import cargar_csv_trayectoria, guardar_csv
 from graficos.graficos_luna import graficar_orbitas

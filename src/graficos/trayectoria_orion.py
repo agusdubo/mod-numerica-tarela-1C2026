@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 """
-trayectoria_orion.py
-
 Requiere que exista el CSV de órbita lunar correspondiente al método elegido
 (generado previamente con trayectoria_luna.py).
 
@@ -17,7 +15,7 @@ import sys
 import numpy as np
 from PyQt5.QtWidgets import QApplication
 
-from utils.discretizaciones import INTEGRADORES
+from src.utils.pasos import INTEGRADORES
 from utils.fisica import simular_orion, ORION_X0, ORION_Y0, ORION_VX0, ORION_VY0
 from graficos.io_datos import cargar_posiciones_luna
 from graficos.graficos_orion import VentanaOrbital

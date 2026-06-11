@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from utils.discretizaciones import INTEGRADORES
+from src.utils.pasos import INTEGRADORES
 
 # ── Constantes ───────────────────────────────────────────────────────────────
 G               = 6.674e-11
