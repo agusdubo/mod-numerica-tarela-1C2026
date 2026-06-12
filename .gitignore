@@ -1,5 +1,6 @@
 .venv/
 .vscode/
 __pycache__/
+resultados/
 *.pyc
 telemetry_frame_*.png

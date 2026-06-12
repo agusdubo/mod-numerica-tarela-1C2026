@@ -29,7 +29,7 @@ def construir_calcular_fuentes(metodo, dt, duracion) -> callable:
     if not os.path.exists(ruta_luna):
         print(
             f"Error: no se encontró '{ruta_luna}'.\n"
-            f"Ejecutá primero: python trayectoria_luna.py --metodos {metodo}",
+            f"Ejecutá primero trayectoria_luna.py --metodos {metodo}",
             file=sys.stderr,
         )
         sys.exit(1)
