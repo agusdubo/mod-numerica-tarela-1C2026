@@ -7,6 +7,7 @@ Requiere que exista el CSV de órbita lunar correspondiente al método elegido
 Uso:
     python trayectoria_orion.py --metodo rk4
     python trayectoria_orion.py --metodo euler --dt 60 --duracion 10
+    python trayectoria_orion.py --metodo rk4 --ev0 -633 --ev1 -36 --paso 100 --salida mi_imagen.png
 """
 
 import argparse
@@ -14,12 +15,11 @@ import os
 import sys
 
 import numpy as np
-from PyQt5.QtWidgets import QApplication
 
 from utils.pasos import INTEGRADORES
 from utils.fisica import simular_orion, ORION_X0, ORION_Y0, ORION_VX0, ORION_VY0
 from graficos.io_datos import cargar_posiciones_luna
-from graficos.graficos_orion import VentanaOrbital
+from graficos.graficos_orion import graficar_orbital
 
 
 def construir_calcular_fuentes(metodo, dt, duracion) -> callable:
@@ -51,7 +51,7 @@ def construir_calcular_fuentes(metodo, dt, duracion) -> callable:
 
 def parse_args():
     p = argparse.ArgumentParser(
-        description="Simulador interactivo de la trayectoria de Orión.",
+        description="Simulador de la trayectoria de Orión (genera imagen).",
         epilog=__doc__,
     )
     p.add_argument("--metodo",   required=True,
@@ -60,6 +60,14 @@ def parse_args():
                    help="Paso de tiempo en segundos (default: 60)")
     p.add_argument("--duracion", type=float, default=10.0,
                    help="Duración en días (default: 10)")
+    p.add_argument("--ev0",      type=float, default=-633.0,
+                   help="extra_v[0] velocidad inicial en x (default: -633)")
+    p.add_argument("--ev1",      type=float, default=-36.0,
+                   help="extra_v[1] velocidad inicial en y (default: -36)")
+    p.add_argument("--paso",     type=int,   default=0,
+                   help="Paso de tiempo a marcar en la imagen (default: 0)")
+    p.add_argument("--salida",   type=str,   default="simulacion_orbital.png",
+                   help="Nombre del archivo de imagen a guardar (default: simulacion_orbital.png)")
     return p.parse_args()
 
 
@@ -76,10 +84,13 @@ def main():
         args.metodo, args.dt, args.duracion
     )
 
-    app     = QApplication(sys.argv)
-    ventana = VentanaOrbital(calcular_fuentes)
-    ventana.show()
-    sys.exit(app.exec_())
+    graficar_orbital(
+        calcular_fuentes,
+        ev0=args.ev0,
+        ev1=args.ev1,
+        paso=args.paso,
+        salida=args.salida,
+    )
 
 
 if __name__ == "__main__":
