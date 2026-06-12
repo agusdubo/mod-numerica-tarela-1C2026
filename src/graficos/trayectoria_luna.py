@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """
+Código hecho por: Agustín Dubovitsky Otero (padrón: 111954) y Tomás Bautista Conti (Padrón: 111760)
 Uso:
     python trayectoria_luna.py --metodos rk4
     python trayectoria_luna.py --metodos rk4 euler rk2

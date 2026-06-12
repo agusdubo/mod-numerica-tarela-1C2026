@@ -1,4 +1,5 @@
 """
+Código hecho por: Agustín Dubovitsky Otero (padrón: 111954) y Tomás Bautista Conti (Padrón: 111760)
 Lectura y escritura de CSVs
 """
 

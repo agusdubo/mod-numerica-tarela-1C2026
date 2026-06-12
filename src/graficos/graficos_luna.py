@@ -1,3 +1,4 @@
+# Código hecho por: Agustín Dubovitsky Otero (padrón: 111954) y Tomás Bautista Conti (Padrón: 111760)
 import numpy as np
 import pandas as pd
 import matplotlib
