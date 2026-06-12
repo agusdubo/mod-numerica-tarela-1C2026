@@ -24,7 +24,7 @@ python -m graficos.trayectoria_luna --metodos euler rk2 rk4 --dt <segundos> --du
 python -m graficos.trayectoria_orion --metodo [euler | rk2 | rk4] --dt <segundos> --duracion <días>
 ```
 
-## Valores Predefinidos
+## Valores Predefinidos (sin utilizar flags)
 
 #### Luna
 - *dt* = 60 segundos
