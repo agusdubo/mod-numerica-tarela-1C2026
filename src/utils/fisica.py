@@ -2,7 +2,7 @@
 import numpy as np
 import pandas as pd
 
-from src.utils.pasos import INTEGRADORES
+from utils.pasos import INTEGRADORES
 
 # ── Constantes ───────────────────────────────────────────────────────────────
 G               = 6.674e-11

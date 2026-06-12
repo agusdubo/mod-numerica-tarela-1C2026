@@ -16,7 +16,7 @@ import sys
 import numpy as np
 from PyQt5.QtWidgets import QApplication
 
-from src.utils.pasos import INTEGRADORES
+from utils.pasos import INTEGRADORES
 from utils.fisica import simular_orion, ORION_X0, ORION_Y0, ORION_VX0, ORION_VY0
 from graficos.io_datos import cargar_posiciones_luna
 from graficos.graficos_orion import VentanaOrbital

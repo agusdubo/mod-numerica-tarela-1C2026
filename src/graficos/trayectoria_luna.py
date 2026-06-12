@@ -15,7 +15,7 @@ import argparse
 import os
 import sys
 
-from src.utils.pasos import INTEGRADORES
+from utils.pasos import INTEGRADORES
 from utils.fisica import simular_luna
 from graficos.io_datos  import cargar_csv_trayectoria, guardar_csv
 from graficos.graficos_luna import graficar_orbitas
